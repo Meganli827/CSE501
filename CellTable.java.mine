@@ -1,0 +1,209 @@
+package studio10;
+
+import java.awt.Color;
+
+import sedgewick.StdDraw;
+/**
+ * 
+ * @author limeng
+ *it create the whole playground(relative coordinate)
+ *
+ *
+ */
+
+
+public class CellTable implements Anim{
+	private double coordx;
+	private double coordy;
+	private int col;
+	private int row;
+	private double cellunit;
+	private double shrinkratio;
+	private Cell[][]cells;
+	private Block currentblock;	
+	public  boolean activeblock;
+
+	
+	public CellTable(double coordx, double coordy, int col, int row, double cellunit) {
+		this.coordx = coordx;
+		this.coordy = coordy;
+		this.row = row;
+		this.col = col;
+		this.cellunit = cellunit;
+		this.shrinkratio = 0.9;
+		this.cells = new Cell[col][row];
+		this.currentblock = new Block(row/2,col,0);
+		this.activeblock = false;
+		
+		/**
+		 * initiate the whole ground
+		 */	
+		for (int i = 0;i<row;++i)
+		{
+			for (int j=0; j<col; ++j)
+			{
+				cells[j][i] = new Cell(j,i,Color.white,false);
+			}
+		}
+	}
+	
+	public void SetCurrentBlock(Block currentblock){
+		this.currentblock = currentblock;
+	}
+	
+	public void ClearTable(){
+		for (int i = 0;i<row;++i)
+		{
+			for (int j=0; j<col; ++j)
+			{
+				cells[j][i].setFilled(false);
+			}
+		}
+	}
+	
+	/**
+	 * to judge whether should continue fall blocks
+	 * @return
+	 */
+	public boolean FallBlockFlag(){
+		if((currentblock.getCentery()-1)<0){
+			return false;
+		}
+		else if(cells[currentblock.getCenterx()][currentblock.getCentery()-1].isFilled()){
+			return false;
+		}
+		else{
+			return true;
+		}
+	}
+	/**
+	 * clear last block position and create a new position y-1
+	 */
+	
+	public void FallBlock(){
+		// clear last block position
+		this.ClearBlock(currentblock.getCenterx(), currentblock.getCentery());
+		currentblock.setCentery(currentblock.getCentery()-1);
+	}
+	
+	public void MergeBlock(){
+		
+	}
+	
+	/**
+	 * judge moving left or right
+	 * @param left
+	 * @return
+	 */
+	public boolean MoveBlockFlag(boolean left){
+		if(left){
+			if(currentblock.getCenterx()-1<0){
+				return false;
+			}
+			else if(cells[currentblock.getCenterx()-1][currentblock.getCentery()].isFilled()){
+				return false;
+			}
+			else return true;
+		}
+		else{
+			if(currentblock.getCenterx()+2>this.col){
+				return false;
+			}
+			else if(cells[currentblock.getCenterx()+1][currentblock.getCentery()].isFilled()){
+				return false;
+			}
+			else return true;
+		}
+		// return true;
+	}
+	
+	public void MoveBlock(boolean left){
+		if(left){
+			this.ClearBlock(currentblock.getCenterx(), currentblock.getCentery());
+			currentblock.setCenterx(currentblock.getCenterx()-1);
+		}
+		else{ // right
+			this.ClearBlock(currentblock.getCenterx(), currentblock.getCentery());
+			currentblock.setCenterx(currentblock.getCenterx()+1);
+		}
+	}
+	
+	private void ClearBlock(int x, int y){
+		cells[x][y].setFilled(false);
+		cells[x][y].setCellcolor(Color.WHITE);
+	}
+	
+	public void UpdateBlock(){
+		cells[currentblock.getCenterx()][currentblock.getCentery()].setFilled(true);
+		cells[currentblock.getCenterx()][currentblock.getCentery()].setCellcolor(currentblock.getColor());
+	}
+	/**
+	 * iterate all forms in the playground
+	 * judge whether there are a row already full, delete it, and let every other block fall down 1 unit
+	 * @return
+	 */
+	public int CheckFullRow(){
+		int numfullrow = 0;
+		boolean tempfullrow = false;
+		for (int i=0;i<row;++i)
+		{
+			tempfullrow = true;
+			
+			for (int j=0; j<col; ++j)
+			{
+				if(!cells[j][i].isFilled()){
+					tempfullrow = false;
+					j = col;
+				}
+			}
+			
+			if (tempfullrow == true){
+				numfullrow++;
+				// remove current row
+				// shift the other guys above down one row
+				this.ShiftDownRow(i);
+				//i--;
+			}
+		}
+		return numfullrow;
+	}
+	
+	private void ShiftDownRow(int base){
+		for (int i=base;i<row-1;++i)
+		{
+			for (int j=0; j<col; ++j)
+			{
+				cells[j][i].setFilled(cells[j][i+1].isFilled());
+				cells[j][i].setCellcolor(cells[j][i+1].getCellcolor());
+			}
+		}
+	}
+	
+	@Override
+	public void draw() {
+		for (int i = 0;i<row;++i)
+		{
+			for (int j=0; j<col; ++j)
+			{
+				double tempcellx = this.coordx+cells[j][i].x*this.cellunit;
+				double tempcelly = this.coordy+cells[j][i].y*this.cellunit;
+				double tempcellunit = this.cellunit/2.0*shrinkratio;
+				StdDraw.setPenColor(Color.GRAY );
+				StdDraw.rectangle(tempcellx,tempcelly, tempcellunit, tempcellunit);
+				if(cells[j][i].isFilled()){
+					StdDraw.setPenColor(cells[j][i].getCellcolor());
+					StdDraw.filledSquare(tempcellx,tempcelly, tempcellunit);
+				}
+			}
+		}
+	}
+
+	@Override
+	public boolean isDone() {
+		// FIXME Auto-generated method stub
+		return false;
+	}
+	
+	
+	
+}
